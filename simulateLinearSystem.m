@@ -2,7 +2,15 @@
 % Simulates the linear system for time "step" given power "u" with
 % parameters "params" and initial values for x, theta1, theta2,
 % and their respective time derivatives
-function [x_1,dx_1,theta1_1,dtheta1_1,theta2_1,dtheta2_1] = simulateLinearSystem(x_0,dx_0,theta1_0,dtheta1_0,theta2_0,dtheta2_0,F,step,params)
+function state_1 = simulateLinearSystem(state_0,F,step,params)
+    % Input paramaters from state vector
+    x_0 = state_0(1);
+    dx_0 = state_0(2);
+    theta1_0 = state_0(3);
+    dtheta1_0 = state_0(4);
+    theta2_0 = state_0(5);
+    dtheta2_0 = state_0(6);
+    
     % Input parameters from params struct
     g = params.g;
     m1 = params.m1;
@@ -23,4 +31,6 @@ function [x_1,dx_1,theta1_1,dtheta1_1,theta2_1,dtheta2_1] = simulateLinearSystem
     x_1 = x_0 + dx_1*step;
     theta1_1 = theta1_0 + dtheta1_1*step;
     theta2_1 = theta2_0 + dtheta2_1*step;
+    
+    state_1 = [x_1; dx_1; theta1_1; dtheta1_1; theta2_1; dtheta2_1];
 end

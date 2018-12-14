@@ -2,7 +2,7 @@
 %
 
 %#ok<*UNRCH>
-clc, clear, close all;
+%clc, clear, close all;
 
 GRAPHICAL_PLOT = false;
 
@@ -23,19 +23,10 @@ params.l1 = l1;
 params.l2 = l2;
 params.g = g;
 
-xLin = 0;%input('Initial X: ');
-theta1Lin = 0;%input('Initial Theta 1: ');
-theta2Lin = 0;%input('Initial Theta 2: ');
-dxLin = 0;%input('Initial d/dt X: ');
-dtheta1Lin = pi/4;%input('Initial d/dt Theta 1: ');
-dtheta2Lin = -pi/4;%input('Initial d/dt Theta 2: ');
-
-xNonLin = xLin;
-theta1NonLin = theta1Lin;
-theta2NonLin = theta2Lin;
-dxNonLin = dxLin;
-dtheta1NonLin = dtheta1Lin;
-dtheta2NonLin = dtheta2Lin;
+stateLin = [0;0;0;0;pi/16;-pi/16];
+stateNonLin = stateLin;
+controlledStateLin = stateLin;
+controlledStateNonLin = stateLin;
 
 AF = [0,1,0,0,0,0;0,0,-g*m1/M,0,-g*m2/M,0;0,0,0,1,0,0;0,0,-g*(M+m1)/(M*l1),0,-g*m2/(M*l1),0;0,0,0,0,0,1;0,0,-g*m1/(M*l2),0,-g*(M+m2)/(M*l2),0];
 BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
@@ -45,38 +36,53 @@ R = 1;
 K = lqr(AF,BF,Q,R);
 
 % Set up Time data
-step = 0.3; % Seconds
-timesteps = 0:step:100-step;
+step = 0.01; % Seconds
+timesteps = 0:step:1000-step;
 resultLin = zeros(numel(timesteps) + 1, 8);
 resultNonLin = resultLin;
+controlledResultLin = resultLin;
+controlledResultNonLin = resultLin;
 if GRAPHICAL_PLOT
     fig = figure; fig.Position = [17 100 1200 728];
-    axLin = subplot(2,1,1);
-    axNonLin = subplot(2,1,2);
+    axLin = subplot(2,2,1); xlabel(axLin,'Lin');
+    axNonLin = subplot(2,2,2); xlabel(axNonLin,'NonLin');
+    axConLin = subplot(2,2,3); xlabel(axConLin,'Controlled Lin');
+    axConNonLin = subplot(2,2,4); xlabel(axConNonLin,'Controlled NonLin');
 end
 for timeIndex = 1:numel(timesteps)
-    linState = [xLin; dxLin; theta1Lin; dtheta1Lin; theta2Lin; dtheta2Lin];
-    nonLinState = [xNonLin; dxNonLin; theta1NonLin; dtheta1NonLin; theta2NonLin; dtheta2NonLin];
-    FLin = K * linState;
-    FNonLin = K * nonLinState;
+    FLin = 0;
+    FNonLin = 0;
+    FConLin = -K * controlledStateLin;
+    FConNonLin = -K * controlledStateNonLin;
     
-    resultLin(timeIndex,:) = [timesteps(timeIndex), xLin, theta1Lin, theta2Lin, dxLin, dtheta1Lin, dtheta2Lin, FLin];
-    resultNonLin(timeIndex,:) = [timesteps(timeIndex), xNonLin, theta1NonLin, theta2NonLin, dxNonLin, dtheta1NonLin, dtheta2NonLin, FNonLin];
+    resultLin(timeIndex,:) = [timesteps(timeIndex), stateLin.', FLin];
+    resultNonLin(timeIndex,:) = [timesteps(timeIndex), stateNonLin.', FNonLin];
+    controlledResultLin(timeIndex,:) = [timesteps(timeIndex), controlledStateLin.', FConLin];
+    controlledResultNonLin(timeIndex,:) = [timesteps(timeIndex), controlledStateNonLin.', FConNonLin];
     
-    [xNonLin,dxNonLin,theta1NonLin,dtheta1NonLin,theta2NonLin,dtheta2NonLin] = simulateNonLinearSystem(xNonLin, dxNonLin, theta1NonLin, dtheta1NonLin, theta2NonLin, dtheta2NonLin, FNonLin, step, params);
-    [xLin,dxLin,theta1Lin,dtheta1Lin,theta2Lin,dtheta2Lin] = simulateLinearSystem(xLin, dxLin, theta1Lin, dtheta1Lin, theta2Lin, dtheta2Lin, FLin, step, params);
+    stateLin = simulateLinearSystem(stateLin, FLin, step, params);
+    stateNonLin = simulateNonLinearSystem(stateNonLin, FNonLin, step, params);
+    controlledStateLin = simulateLinearSystem(controlledStateLin, FConLin, step, params);
+    controlledStateNonLin = simulateNonLinearSystem(controlledStateNonLin, FConNonLin, step, params);
     
     if GRAPHICAL_PLOT
-        plotState(axLin, xLin, theta1Lin, theta2Lin, params.l1, params.l2);
-        plotState(axNonLin, xNonLin, theta1NonLin, theta2NonLin, params.l1, params.l2);
+        plotState(axLin, stateLin(1), stateLin(3), stateLin(5), params.l1, params.l2);
+        plotState(axNonLin, stateNonLin(1), stateNonLin(3), stateNonLin(5), params.l1, params.l2);
+        plotState(axConLin, controlledStateLin(1), controlledStateLin(3), controlledStateLin(5), params.l1, params.l2);
+        plotState(axConNonLin, controlledStateNonLin(1), controlledStateNonLin(3), controlledStateNonLin(5), params.l1, params.l2);
     end
 end
-resultLin(end,:) = [timesteps(end) + step, xLin, theta1Lin, theta2Lin, dxLin, dtheta1Lin, dtheta2Lin, nan];
-resultNonLin(end,:) = [timesteps(end) + step, xNonLin, theta1NonLin, theta2NonLin, dxNonLin, dtheta1NonLin, dtheta2NonLin, nan];
-figure;
-subplot 221;plot(resultLin(:,1),resultLin(:,2),'r',resultNonLin(:,1),resultNonLin(:,2),'b-.'); legend('Linear','Non-Linear'); title('x');
-subplot 222;plot(resultLin(:,1),resultLin(:,3),'r',resultNonLin(:,1),resultNonLin(:,3),'b-.'); legend('Linear','Non-Linear'); title('t1');
-subplot 223;plot(resultLin(:,1),resultLin(:,4),'r',resultNonLin(:,1),resultNonLin(:,4),'b-.'); legend('Linear','Non-Linear'); title('t2');
+resultLin(end,:) = [timesteps(end) + step, stateLin.', nan];
+resultNonLin(end,:) = [timesteps(end) + step, stateNonLin.', nan];
+controlledResultLin(end,:) = [timesteps(end) + step, controlledStateLin.', nan];
+controlledResultNonLin(end,:) = [timesteps(end) + step, controlledStateNonLin.', nan];
+figure('units','normalized','outerposition',[0 0 1 1]);
+subplot 321;plot(resultLin(:,1),resultLin(:,2),'r',resultNonLin(:,1),resultNonLin(:,2),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Uncontrolled X');
+subplot 323;plot(resultLin(:,1),resultLin(:,4),'r',resultNonLin(:,1),resultNonLin(:,4),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Uncontrolled Theta 1');
+subplot 325;plot(resultLin(:,1),resultLin(:,6),'r',resultNonLin(:,1),resultNonLin(:,6),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Uncontrolled Theta 2');
+subplot 322;plot(controlledResultLin(:,1),controlledResultLin(:,2),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,2),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Controlled X');
+subplot 324;plot(controlledResultLin(:,1),controlledResultLin(:,4),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,4),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Controlled Theta 1');
+subplot 326;plot(controlledResultLin(:,1),controlledResultLin(:,6),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,6),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Controlled Theta 2');
 function plotState(ax, x, theta1, theta2, l1, l2)
     axes(ax); hold off;
     
