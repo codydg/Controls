@@ -12,17 +12,21 @@ if ~exist('GRAPHICAL_PLOT','var')
     END_PLOT = true;
     MAKE_VIDEO = false;
     
-    initState = [0;0;pi/16;0;0;0];
+    initState = [0;1;pi/8;pi/8;-pi/8;pi/8];
+%     initState = [0;0;0;0;0;0];
+    
+%     L_Goal = [-20;-15;-10;-5;-3.5;-2]*0.1;
+    L_Goal = [-20;-19;-10;-9;-5;-4]*0.1;
+%     L_Goal = linspace(-0.3,-0.15,6)*1;
 
-    Q = diag([1,1,10,1000,10,1000]);
-    R = 0.00001;
+    step = 0.0001; % Seconds
+    timesteps = 0:step:50-step;
+    F_Summary = zeros(numel(timesteps),1) + 10;
+    lim = 1;
     
-    C = [1 0 0 0 0 0];
-%     C = [1 0 0 0 1 0];
+%     C = [1 0 0 0 0 0];
+    C = [1 0 0 0 1 0];
 %     C = [1 0 1 0 1 0];
-    
-    finalX = 0;
-%     finalX = 50;
 end
 % Set up simulation parameters
 M = 1000; % kg
@@ -49,30 +53,17 @@ estimatedStateNonLin = estimatedStateLin;
 AF = [0,1,0,0,0,0;0,0,-g*m1/M,0,-g*m2/M,0;0,0,0,1,0,0;0,0,-g*(M+m1)/(M*l1),0,-g*m2/(M*l1),0;0,0,0,0,0,1;0,0,-g*m1/(M*l2),0,-g*(M+m2)/(M*l2),0];
 BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
 
-[K, S, e] = lqr(AF,BF,Q,R);
-
-disp('Eigenvalues'' real parts from A_F - B_F * K');
-fprintf('%f\n',real(e));
-
-L = place(AF',C',real(e) * 10 + 1i*imag(e)).';
+L = place(AF',C',L_Goal).';
 eo = eig(AF - L*C);
 disp(real(eo));
 
-figure;
-limits = [min(real(e)) - 0.1, 0.1, min(imag(e)) - 0.1,max(imag(e)) + 0.1];
-plot(real(e),imag(e),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
-xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
-axis(limits); grid on;
 figure;
 limits = [min(real(eo)) - 0.1, 0.1, min(imag(eo)) - 0.1,max(imag(eo)) + 0.1];
 plot(real(eo),imag(eo),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
 xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
 axis(limits); grid on;
 
-%%
 % Set up Time data
-step = 0.0001; % Seconds
-timesteps = 0:step:40-step;
 resultLin = zeros(numel(timesteps) + 1, 14);
 resultNonLin = resultLin;
 if GRAPHICAL_PLOT
@@ -84,7 +75,7 @@ if MAKE_VIDEO
     v = VideoWriter('video','MPEG-4');
     open(v);
 end
-FLin = zeros(numel(timesteps),1);
+FLin = F_Summary;
 % FLin = 200 * ones(numel(timesteps),1);
 FNonLin = FLin;
 for timeIndex = 1:numel(timesteps)
@@ -114,13 +105,12 @@ resultLin(end,:) = [timesteps(end) + step, stateLin.', nan, estimatedStateLin.']
 resultNonLin(end,:) = [timesteps(end) + step, stateNonLin.', nan, estimatedStateNonLin.'];
 if (END_PLOT)
     figure('units','normalized','outerposition',[0 0 1 1]);
-    N_SKIP = 10;
-    subplot 321;plot(resultLin(1:end-N_SKIP,1),resultLin(1:end-N_SKIP,2) - resultLin(1:end-N_SKIP,9),'r',resultNonLin(1:end-N_SKIP,1),resultNonLin(1:end-N_SKIP,2) - resultNonLin(1:end-N_SKIP,9),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Estimation Error X');
-    subplot 323;plot(resultLin(1:end-N_SKIP,1),resultLin(1:end-N_SKIP,4) - resultLin(1:end-N_SKIP,11),'r',resultNonLin(1:end-N_SKIP,1),resultNonLin(1:end-N_SKIP,4) - resultNonLin(1:end-N_SKIP,11),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Estimation Error Theta 1');
-    subplot 325;plot(resultLin(1:end-N_SKIP,1),resultLin(1:end-N_SKIP,6) - resultLin(1:end-N_SKIP,13),'r',resultNonLin(1:end-N_SKIP,1),resultNonLin(1:end-N_SKIP,6) - resultNonLin(1:end-N_SKIP,13),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Estimation Error Theta 2');
-    subplot 322;plot(resultLin(1:end-N_SKIP,1),resultLin(1:end-N_SKIP,3) - resultLin(1:end-N_SKIP,10),'r',resultNonLin(1:end-N_SKIP,1),resultNonLin(1:end-N_SKIP,3) - resultNonLin(1:end-N_SKIP,10),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt X'); xlabel('Time'); title('Estimation Error d/dt X');
-    subplot 324;plot(resultLin(1:end-N_SKIP,1),resultLin(1:end-N_SKIP,5) - resultLin(1:end-N_SKIP,12),'r',resultNonLin(1:end-N_SKIP,1),resultNonLin(1:end-N_SKIP,5) - resultNonLin(1:end-N_SKIP,12),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 1'); xlabel('Time'); title('Estimation Error d/dt Theta 1');
-    subplot 326;plot(resultLin(1:end-N_SKIP,1),resultLin(1:end-N_SKIP,7) - resultLin(1:end-N_SKIP,14),'r',resultNonLin(1:end-N_SKIP,1),resultNonLin(1:end-N_SKIP,7) - resultNonLin(1:end-N_SKIP,14),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 2'); xlabel('Time'); title('Estimation Error d/dt Theta 2');
+    subplot 321;plot(resultLin(1:end,1),resultLin(1:end,2) - resultLin(1:end,9),'r',resultNonLin(1:end,1),resultNonLin(1:end,2) - resultNonLin(1:end,9),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Estimation Error X');ylim([-lim,lim]);
+    subplot 323;plot(resultLin(1:end,1),resultLin(1:end,4) - resultLin(1:end,11),'r',resultNonLin(1:end,1),resultNonLin(1:end,4) - resultNonLin(1:end,11),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Estimation Error Theta 1');ylim([-lim,lim]);
+    subplot 325;plot(resultLin(1:end,1),resultLin(1:end,6) - resultLin(1:end,13),'r',resultNonLin(1:end,1),resultNonLin(1:end,6) - resultNonLin(1:end,13),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Estimation Error Theta 2');ylim([-lim,lim]);
+    subplot 322;plot(resultLin(1:end,1),resultLin(1:end,3) - resultLin(1:end,10),'r',resultNonLin(1:end,1),resultNonLin(1:end,3) - resultNonLin(1:end,10),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt X'); xlabel('Time'); title('Estimation Error d/dt X');ylim([-lim,lim]);
+    subplot 324;plot(resultLin(1:end,1),resultLin(1:end,5) - resultLin(1:end,12),'r',resultNonLin(1:end,1),resultNonLin(1:end,5) - resultNonLin(1:end,12),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 1'); xlabel('Time'); title('Estimation Error d/dt Theta 1');ylim([-lim,lim]);
+    subplot 326;plot(resultLin(1:end,1),resultLin(1:end,7) - resultLin(1:end,14),'r',resultNonLin(1:end,1),resultNonLin(1:end,7) - resultNonLin(1:end,14),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 2'); xlabel('Time'); title('Estimation Error d/dt Theta 2');ylim([-lim,lim]);
 end
 function plotState(ax, x, theta1, theta2, l1, l2)
     axes(ax);
