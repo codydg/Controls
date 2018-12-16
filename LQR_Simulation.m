@@ -7,15 +7,19 @@ clc, clear, close all;
 if ~exist('GRAPHICAL_PLOT','var')
     clc, clear, close all;
     
-    GRAPHICAL_PLOT = true;
-    PLOT_LINEAR = true;
+    GRAPHICAL_PLOT = false;
+    PLOT_LINEAR = false;
     END_PLOT = true;
     MAKE_VIDEO = false;
-    initState = [0;0;0;pi/8;0;pi/8];
+    
+    initState = [0;10;0;pi/8;0;-pi/8];    
+%     initState = [0;0;0;0;0;0];
+
     Q = diag([1,1,10,1000,10,1000]);
     R = 0.00001;
     
-    finalX = 50;
+    finalX = 0;
+%     finalX = 50;
 end
 % Set up simulation parameters
 M = 1000; % kg
@@ -42,14 +46,21 @@ controlledStateNonLin = initState;
 AF = [0,1,0,0,0,0;0,0,-g*m1/M,0,-g*m2/M,0;0,0,0,1,0,0;0,0,-g*(M+m1)/(M*l1),0,-g*m2/(M*l1),0;0,0,0,0,0,1;0,0,-g*m1/(M*l2),0,-g*(M+m2)/(M*l2),0];
 BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
 
-K = lqr(AF,BF,Q,R);
+[K, S, e] = lqr(AF,BF,Q,R);
 
 disp('Eigenvalues'' real parts from A_F - B_F * K');
-fprintf('%f\n',real(eig(AF-BF*K)));
+fprintf('%f\n',real(e));
 
+figure;
+limits = [min(real(e)) - 0.1, 0.1, min(imag(e)) - 0.1,max(imag(e)) + 0.1];
+plot(real(e),imag(e),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
+xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
+axis(limits); grid on;
+
+%%
 % Set up Time data
-step = 0.1; % Seconds
-timesteps = 0:step:100-step;
+step = 0.01; % Seconds
+timesteps = 0:step:40-step;
 resultLin = zeros(numel(timesteps) + 1, 8);
 resultNonLin = resultLin;
 controlledResultLin = resultLin;
@@ -68,6 +79,10 @@ if MAKE_VIDEO
     v = VideoWriter('video','MPEG-4');
     open(v);
 end
+FLin = 0;
+FNonLin = 0;
+FConLin = 0;
+FConNonLin = 0;
 for timeIndex = 1:numel(timesteps)
     FLin = 0;
     FNonLin = 0;
@@ -84,7 +99,7 @@ for timeIndex = 1:numel(timesteps)
     controlledStateLin = simulateLinearSystem(controlledStateLin, FConLin, step, params);
     controlledStateNonLin = simulateNonLinearSystem(controlledStateNonLin, FConNonLin, step, params);
     
-    if GRAPHICAL_PLOT && mod(timeIndex, 4) == 0
+    if GRAPHICAL_PLOT && mod(timeIndex, 10) == 0
         if PLOT_LINEAR
             plotState(ax1, stateLin(1), stateLin(3), stateLin(5), params.l1, params.l2);
             plotState(ax2, controlledStateLin(1), controlledStateLin(3), controlledStateLin(5), params.l1, params.l2);
@@ -112,6 +127,7 @@ if (END_PLOT)
     subplot 322;plot(controlledResultLin(:,1),controlledResultLin(:,2),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,2),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Controlled X');
     subplot 324;plot(controlledResultLin(:,1),controlledResultLin(:,4),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,4),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Controlled Theta 1');
     subplot 326;plot(controlledResultLin(:,1),controlledResultLin(:,6),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,6),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Controlled Theta 2');
+    figure; plot(controlledResultLin(:,1),controlledResultLin(:,8),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,8),'b-.'); legend('Linear','Non-Linear'); ylabel('Control Input'); xlabel('Time'); title('Control Input (Force)');
 end
 function plotState(ax, x, theta1, theta2, l1, l2)
     axes(ax);
