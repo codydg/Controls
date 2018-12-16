@@ -11,8 +11,7 @@ if ~exist('GRAPHICAL_PLOT','var')
     PLOT_LINEAR = false;
     END_PLOT = true;
     MAKE_VIDEO = false;
-    
-    initState = [0;10;0;pi/8;0;-pi/8];    
+    initState = [0;10;0;pi/8;0;-pi/8];
 %     initState = [0;0;0;0;0;0];
 
     Q = diag([1,1,10,1000,10,1000]);

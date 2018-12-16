@@ -16,12 +16,13 @@ if ~exist('GRAPHICAL_PLOT','var')
 %     initState = [0;0;0;0;0;0];
     
 %     L_Goal = [-20;-15;-10;-5;-3.5;-2]*0.1;
-    L_Goal = [-20;-19;-10;-9;-5;-4]*0.1;
+    L_Goal = [-20;-19;-10;-9;-5;-4]*0.2;
 %     L_Goal = linspace(-0.3,-0.15,6)*1;
 
-    step = 0.0001; % Seconds
+    step = 0.001; % Seconds
     timesteps = 0:step:50-step;
-    F_Summary = zeros(numel(timesteps),1) + 10;
+    F_Summary = zeros(numel(timesteps),1);
+    F_Summary(20/step:end) = 10;
     lim = 1;
     
 %     C = [1 0 0 0 0 0];
