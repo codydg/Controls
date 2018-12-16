@@ -12,21 +12,25 @@ if ~exist('GRAPHICAL_PLOT','var')
     END_PLOT = true;
     MAKE_VIDEO = false;
     
-    initState = [0;1;pi/8;pi/8;-pi/8;pi/8];
+%     initState = [0;1;pi/8;pi/8;-pi/8;pi/8]./1.5;
+    initState = [0;1;0;pi/16;0;-pi/16];
+% initState = [0;5;0;0;0;0];
 %     initState = [0;0;0;0;0;0];
     
-%     L_Goal = [-20;-15;-10;-5;-3.5;-2]*0.1;
-    L_Goal = [-20;-19;-10;-9;-5;-4]*0.1;
+%     L_Goal = [-20;-15;-10;-5;-3.5;-2]*0.15;
+%     L_Goal = [-20;-19.9;-10;-9.9;-5;-4.9]*.15;
+    L_Goal = [-20;-19;-10;-9;-5;-4]*.15;
+%     L_Goal = [-15;-14;-11;-10;-7;-6]*.15;
 %     L_Goal = linspace(-0.3,-0.15,6)*1;
 
     step = 0.0001; % Seconds
-    timesteps = 0:step:50-step;
+    timesteps = 0:step:25-step;
     F_Summary = zeros(numel(timesteps),1) + 10;
     lim = 1;
     
-%     C = [1 0 0 0 0 0];
+    C = [1 0 0 0 0 0];
     C = [1 0 0 0 1 0];
-%     C = [1 0 1 0 1 0];
+    C = [1 0 1 0 1 0];
 end
 % Set up simulation parameters
 M = 1000; % kg
@@ -53,15 +57,15 @@ estimatedStateNonLin = estimatedStateLin;
 AF = [0,1,0,0,0,0;0,0,-g*m1/M,0,-g*m2/M,0;0,0,0,1,0,0;0,0,-g*(M+m1)/(M*l1),0,-g*m2/(M*l1),0;0,0,0,0,0,1;0,0,-g*m1/(M*l2),0,-g*(M+m2)/(M*l2),0];
 BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
 
-L = place(AF',C',L_Goal).';
+L = place(AF',C',L_Goal).'
 eo = eig(AF - L*C);
 disp(real(eo));
 
-figure;
-limits = [min(real(eo)) - 0.1, 0.1, min(imag(eo)) - 0.1,max(imag(eo)) + 0.1];
-plot(real(eo),imag(eo),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
-xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
-axis(limits); grid on;
+% figure;
+% limits = [min(real(eo)) - 0.1, 0.1, min(imag(eo)) - 0.1,max(imag(eo)) + 0.1];
+% plot(real(eo),imag(eo),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
+% xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
+% axis(limits); grid on;
 
 % Set up Time data
 resultLin = zeros(numel(timesteps) + 1, 14);
