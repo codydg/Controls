@@ -8,14 +8,14 @@ if ~exist('GRAPHICAL_PLOT','var')
     clc, clear, close all;
     
     GRAPHICAL_PLOT = true;
-    PLOT_LINEAR = false;
+    PLOT_LINEAR = true;
     END_PLOT = true;
-    MAKE_VIDEO = true;
-    initState = [0;0;0;0;pi/4;-pi/4];
-%     Q = diag([1,1,1,1,1,1]);
-%     R = 1;
-    Q = diag([100,1,0.01,0.01,1,100]);
-    R = 0.01;
+    MAKE_VIDEO = false;
+    initState = [0;0;0;pi/8;0;pi/8];
+    Q = diag([1,1,10,1000,10,1000]);
+    R = 0.00001;
+    
+    finalX = 50;
 end
 % Set up simulation parameters
 M = 1000; % kg
@@ -44,9 +44,12 @@ BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
 
 K = lqr(AF,BF,Q,R);
 
+disp('Eigenvalues'' real parts from A_F - B_F * K');
+fprintf('%f\n',real(eig(AF-BF*K)));
+
 % Set up Time data
 step = 0.1; % Seconds
-timesteps = 0:step:1000-step;
+timesteps = 0:step:100-step;
 resultLin = zeros(numel(timesteps) + 1, 8);
 resultNonLin = resultLin;
 controlledResultLin = resultLin;
@@ -68,8 +71,8 @@ end
 for timeIndex = 1:numel(timesteps)
     FLin = 0;
     FNonLin = 0;
-    FConLin = -K * controlledStateLin;
-    FConNonLin = -K * controlledStateNonLin;
+    FConLin = -K * (controlledStateLin - [finalX;zeros(5,1)]);
+    FConNonLin = -K * (controlledStateNonLin - [finalX;zeros(5,1)]);
     
     resultLin(timeIndex,:) = [timesteps(timeIndex), stateLin.', FLin];
     resultNonLin(timeIndex,:) = [timesteps(timeIndex), stateNonLin.', FNonLin];
@@ -81,7 +84,7 @@ for timeIndex = 1:numel(timesteps)
     controlledStateLin = simulateLinearSystem(controlledStateLin, FConLin, step, params);
     controlledStateNonLin = simulateNonLinearSystem(controlledStateNonLin, FConNonLin, step, params);
     
-    if GRAPHICAL_PLOT% && mod(timeIndex, 40) == 0
+    if GRAPHICAL_PLOT && mod(timeIndex, 4) == 0
         if PLOT_LINEAR
             plotState(ax1, stateLin(1), stateLin(3), stateLin(5), params.l1, params.l2);
             plotState(ax2, controlledStateLin(1), controlledStateLin(3), controlledStateLin(5), params.l1, params.l2);
@@ -111,24 +114,25 @@ if (END_PLOT)
     subplot 326;plot(controlledResultLin(:,1),controlledResultLin(:,6),'r',controlledResultNonLin(:,1),controlledResultNonLin(:,6),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Controlled Theta 2');
 end
 function plotState(ax, x, theta1, theta2, l1, l2)
-    axes(ax); cla; hold on;
+    axes(ax);
+    
+    % Plot Ropes
+    center1 = [x - l1*sin(theta1),-l1*cos(theta1)];
+    center2 = [x - l2*sin(theta2),-l2*cos(theta2)];
+    plot([center1(1), x, center2(1)], [center1(2), 0, center2(2)], 'k');
+    hold on;
     
     % Plot Box
     boxWidth = 5; boxHeight = 5;
-    plot(x + 0.5*[-boxWidth,boxWidth,boxWidth,-boxWidth,-boxWidth], ...
-        0.5*[boxHeight,boxHeight,-boxHeight,-boxHeight,boxHeight],'k');
+    rectangle('Position',[x-boxWidth/2, -boxHeight/2, boxWidth, boxHeight]);
     
     % Plot Circles
     massRadius = 2.5;
-    center1 = [x - l1*sin(theta1),-l1*cos(theta1)];
-    viscircles(center1, massRadius, 'Color', 'b');
-    center2 = [x - l2*sin(theta2),-l2*cos(theta2)];
-    viscircles(center2, massRadius, 'Color', 'r');
-    
-    % Plot Ropes
-    plot([center1(1), x, center2(1)], [center1(2), 0, center2(2)], 'k');
+    rectangle('Position',[center1 - massRadius/2,massRadius,massRadius],'Curvature',1);
+    rectangle('Position',[center2 - massRadius/2,massRadius,massRadius],'Curvature',1);
     
     % Adjust Axis
-    axis([-60+x,60+x,-25,5]);
-    drawnow;
+    xlim([-60+x,60+x]);
+    ylim([-25,5]);
+    drawnow; hold off;
 end
