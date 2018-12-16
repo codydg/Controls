@@ -7,26 +7,26 @@ clc, clear, close all;
 if ~exist('GRAPHICAL_PLOT','var')
     clc, clear, close all;
     
-    GRAPHICAL_PLOT = false;
+    GRAPHICAL_PLOT = true;
     PLOT_LINEAR = false;
     END_PLOT = true;
     MAKE_VIDEO = false;
     
-    initState = [0;1;pi/8;pi/8;-pi/8;pi/8];
-%     initState = [0;0;0;0;0;0];
+%     initState = [0;1;0;pi/16;0;-pi/16];
+    initState = [0;0;0;0;0;0];
     
 %     L_Goal = [-20;-15;-10;-5;-3.5;-2]*0.1;
-    L_Goal = [-20;-19;-10;-9;-5;-4]*0.2;
+    L_Goal = [-20;-19;-10;-9;-5;-4]*0.15;
 %     L_Goal = linspace(-0.3,-0.15,6)*1;
 
-    step = 0.001; % Seconds
+    step = 0.01; % Seconds
     timesteps = 0:step:50-step;
     F_Summary = zeros(numel(timesteps),1);
-    F_Summary(20/step:end) = 10;
+    F_Summary(20/step:end) = 4000;
     lim = 1;
     
-%     C = [1 0 0 0 0 0];
-    C = [1 0 0 0 1 0];
+    C = [1 0 0 0 0 0];
+%     C = [1 0 0 0 1 0];
 %     C = [1 0 1 0 1 0];
 end
 % Set up simulation parameters
@@ -48,7 +48,7 @@ params.g = g;
 
 stateLin = initState;
 stateNonLin = initState;
-estimatedStateLin = zeros(size(stateLin));
+estimatedStateLin = diag(C) * initState;
 estimatedStateNonLin = estimatedStateLin;
 
 AF = [0,1,0,0,0,0;0,0,-g*m1/M,0,-g*m2/M,0;0,0,0,1,0,0;0,0,-g*(M+m1)/(M*l1),0,-g*m2/(M*l1),0;0,0,0,0,0,1;0,0,-g*m1/(M*l2),0,-g*(M+m2)/(M*l2),0];
@@ -91,7 +91,7 @@ for timeIndex = 1:numel(timesteps)
     stateLin = simulateLinearSystem(stateLin, FLin(timeIndex), step, params);
     stateNonLin = simulateNonLinearSystem(stateNonLin, FNonLin(timeIndex), step, params);
     
-    if GRAPHICAL_PLOT && mod(timeIndex, 10) == 0
+    if GRAPHICAL_PLOT && mod(timeIndex, 50) == 0
         plotState(ax1, stateLin(1), stateLin(3), stateLin(5), params.l1, params.l2);
         plotState(ax2, stateNonLin(1), stateNonLin(3), stateNonLin(5), params.l1, params.l2);
         if MAKE_VIDEO

@@ -7,17 +7,17 @@ clc, clear, close all;
 if ~exist('GRAPHICAL_PLOT','var')
     clc, clear, close all;
     
-    GRAPHICAL_PLOT = true;
+    GRAPHICAL_PLOT = false;
     PLOT_LINEAR = false;
     END_PLOT = true;
     MAKE_VIDEO = false;
     SHOW_EVERY_N_FRAMES = 200;
     
 %     initState = [0;5;0;pi/8;0;-pi/8];
-    initState = [5;0;0;0;0;0];
+%     initState = [5;0;0;0;0;0];
 %     initState = [0;1;pi/8;pi/8;-pi/8;pi/8];
 %     initState = [0;0;0;0;0;0];
-%     initState = [0;0;0;pi/16;0;-pi/16];
+    initState = [0;1;0;pi/16;0;pi/16];
 
     Q = diag([1,1,10,1000,10,1000]);
     R = 0.00001;
@@ -58,10 +58,10 @@ stateLin = initState;
 stateNonLin = initState;
 controlledStateLin = initState;
 controlledStateNonLin = initState;
-estimatedStateLin = diag(C)*initState;
-estimatedStateNonLin = diag(C)*initState;
-estimatedConStateLin = diag(C)*initState;
-estimatedConStateNonLin = diag(C)*initState;
+estimatedStateLin = diag(C) * initState;
+estimatedStateNonLin = estimatedStateLin;
+estimatedConStateLin = estimatedStateLin;
+estimatedConStateNonLin = estimatedStateLin;
 
 AF = [0,1,0,0,0,0;0,0,-g*m1/M,0,-g*m2/M,0;0,0,0,1,0,0;0,0,-g*(M+m1)/(M*l1),0,-g*m2/(M*l1),0;0,0,0,0,0,1;0,0,-g*m1/(M*l2),0,-g*(M+m2)/(M*l2),0];
 BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
@@ -73,17 +73,13 @@ fprintf('%f\n',real(e));
 
 L = place(AF',C',L_Goal).';
 eo = eig(AF - L*C);
-disp(real(eo));
+disp('Eigenvalues'' real parts from A_F - L * C');
+fprintf('%f\n',real(eo));
 
 figure;
-limits = [min(real(e)) - 0.1, 0.1, min(imag(e)) - 0.1,max(imag(e)) + 0.1];
-plot(real(e),imag(e),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
-xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
-axis(limits); grid on;
-figure;
-limits = [min(real(eo)) - 0.1, 0.1, min(imag(eo)) - 0.1,max(imag(eo)) + 0.1];
-plot(real(eo),imag(eo),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
-xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
+limits = [min([real(e); real(eo)]) - 0.1, 0.1, min([imag(e); imag(eo)]) - 0.1,max([imag(e); imag(eo)]) + 0.1];
+plot(real(e),imag(e),'*',real(eo),imag(eo),'*',limits(1:2),[0,0],'k',[0,0],limits(3:4),'k');
+legend('LQR','Observer','Location','best'); xlabel('Real'); ylabel('Imaginary'); title('Poles of System');
 axis(limits); grid on;
 
 % Set up Time data
