@@ -7,7 +7,7 @@ clc, clear, close all;
 if ~exist('GRAPHICAL_PLOT','var')
     clc, clear, close all;
     
-    GRAPHICAL_PLOT = true;
+    GRAPHICAL_PLOT = false;
     PLOT_LINEAR = false;
     END_PLOT = true;
     MAKE_VIDEO = false;
@@ -19,11 +19,11 @@ if ~exist('GRAPHICAL_PLOT','var')
     L_Goal = [-20;-19;-10;-9;-5;-4]*0.15;
 %     L_Goal = linspace(-0.3,-0.15,6)*1;
 
-    step = 0.01; % Seconds
+    step = 0.0001; % Seconds
     timesteps = 0:step:50-step;
     F_Summary = zeros(numel(timesteps),1);
-    F_Summary(20/step:end) = 4000;
-    lim = 1;
+    F_Summary(20/step:end) = 100;
+    lim = 0.04*step*F_Summary(end);
     
     C = [1 0 0 0 0 0];
 %     C = [1 0 0 0 1 0];
@@ -106,12 +106,30 @@ resultLin(end,:) = [timesteps(end) + step, stateLin.', nan, estimatedStateLin.']
 resultNonLin(end,:) = [timesteps(end) + step, stateNonLin.', nan, estimatedStateNonLin.'];
 if (END_PLOT)
     figure('units','normalized','outerposition',[0 0 1 1]);
-    subplot 321;plot(resultLin(1:end,1),resultLin(1:end,2) - resultLin(1:end,9),'r',resultNonLin(1:end,1),resultNonLin(1:end,2) - resultNonLin(1:end,9),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Estimation Error X');ylim([-lim,lim]);
-    subplot 323;plot(resultLin(1:end,1),resultLin(1:end,4) - resultLin(1:end,11),'r',resultNonLin(1:end,1),resultNonLin(1:end,4) - resultNonLin(1:end,11),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Estimation Error Theta 1');ylim([-lim,lim]);
-    subplot 325;plot(resultLin(1:end,1),resultLin(1:end,6) - resultLin(1:end,13),'r',resultNonLin(1:end,1),resultNonLin(1:end,6) - resultNonLin(1:end,13),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Estimation Error Theta 2');ylim([-lim,lim]);
-    subplot 322;plot(resultLin(1:end,1),resultLin(1:end,3) - resultLin(1:end,10),'r',resultNonLin(1:end,1),resultNonLin(1:end,3) - resultNonLin(1:end,10),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt X'); xlabel('Time'); title('Estimation Error d/dt X');ylim([-lim,lim]);
-    subplot 324;plot(resultLin(1:end,1),resultLin(1:end,5) - resultLin(1:end,12),'r',resultNonLin(1:end,1),resultNonLin(1:end,5) - resultNonLin(1:end,12),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 1'); xlabel('Time'); title('Estimation Error d/dt Theta 1');ylim([-lim,lim]);
-    subplot 326;plot(resultLin(1:end,1),resultLin(1:end,7) - resultLin(1:end,14),'r',resultNonLin(1:end,1),resultNonLin(1:end,7) - resultNonLin(1:end,14),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 2'); xlabel('Time'); title('Estimation Error d/dt Theta 2');ylim([-lim,lim]);
+    subplot 321;plot(resultLin(1:end,1),resultLin(1:end,2) - resultLin(1:end,9),'r',resultNonLin(1:end,1),resultNonLin(1:end,2) - resultNonLin(1:end,9),'b-.'); legend('Linear','Non-Linear'); ylabel('X'); xlabel('Time'); title('Estimation Error X'); 
+    if ~isnan(lim)
+        ylim([-lim,lim]);
+    end
+    subplot 323;plot(resultLin(1:end,1),resultLin(1:end,4) - resultLin(1:end,11),'r',resultNonLin(1:end,1),resultNonLin(1:end,4) - resultNonLin(1:end,11),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 1'); xlabel('Time'); title('Estimation Error Theta 1');
+    if ~isnan(lim)
+        ylim([-lim,lim]/20);
+    end
+    subplot 325;plot(resultLin(1:end,1),resultLin(1:end,6) - resultLin(1:end,13),'r',resultNonLin(1:end,1),resultNonLin(1:end,6) - resultNonLin(1:end,13),'b-.'); legend('Linear','Non-Linear'); ylabel('Theta 2'); xlabel('Time'); title('Estimation Error Theta 2');
+    if ~isnan(lim)
+        ylim([-lim,lim]/20);
+    end
+    subplot 322;plot(resultLin(1:end,1),resultLin(1:end,3) - resultLin(1:end,10),'r',resultNonLin(1:end,1),resultNonLin(1:end,3) - resultNonLin(1:end,10),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt X'); xlabel('Time'); title('Estimation Error d/dt X');
+    if ~isnan(lim)
+        ylim([-lim,lim]/10);
+    end
+    subplot 324;plot(resultLin(1:end,1),resultLin(1:end,5) - resultLin(1:end,12),'r',resultNonLin(1:end,1),resultNonLin(1:end,5) - resultNonLin(1:end,12),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 1'); xlabel('Time'); title('Estimation Error d/dt Theta 1');
+    if ~isnan(lim)
+        ylim([-lim,lim]/20);
+    end
+    subplot 326;plot(resultLin(1:end,1),resultLin(1:end,7) - resultLin(1:end,14),'r',resultNonLin(1:end,1),resultNonLin(1:end,7) - resultNonLin(1:end,14),'b-.'); legend('Linear','Non-Linear'); ylabel('d/dt Theta 2'); xlabel('Time'); title('Estimation Error d/dt Theta 2');
+    if ~isnan(lim)
+        ylim([-lim,lim]/20);
+    end
 end
 function plotState(ax, x, theta1, theta2, l1, l2)
     axes(ax);
