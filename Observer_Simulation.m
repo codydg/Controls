@@ -54,7 +54,7 @@ BF = [0;1/M;0;1/(M*l1);0;1/(M*l2)];
 disp('Eigenvalues'' real parts from A_F - B_F * K');
 fprintf('%f\n',real(e));
 
-L = place(AF',C',real(e) * 10 + imag(e))';
+L = place(AF',C',real(e) * 10 + 1i*imag(e)).';
 eo = eig(AF - L*C);
 disp(real(eo));
 
