@@ -13,11 +13,8 @@ if ~exist('GRAPHICAL_PLOT','var')
     MAKE_VIDEO = false;
     SHOW_EVERY_N_FRAMES = 200;
     
-%     initState = [0;5;0;pi/8;0;-pi/8];
-%     initState = [5;0;0;0;0;0];
-%     initState = [0;1;pi/8;pi/8;-pi/8;pi/8];
+    initState = [0;1;0;pi/16;0;-pi/16];
 %     initState = [0;0;0;0;0;0];
-    initState = [0;1;0;pi/16;0;pi/16];
 
     Q = diag([1,1,10,1000,10,1000]);
     R = 0.00001;
@@ -30,10 +27,10 @@ if ~exist('GRAPHICAL_PLOT','var')
 %     C = [1 0 1 0 1 0];
     lim = 1;
     
-    uF = 0;
+    disturbanceForce = 0;
     
-    finalX = 0;
-%     finalX = 50;
+%     finalX = 0;
+    finalX = 50;
 
     VIDEO_NAME = sprintf('%3.2f_O%1d',L_Goal(end)/-4,sum(C));
 end
@@ -128,10 +125,10 @@ for timeIndex = 1:numel(timesteps)
     controlledResultLin(timeIndex,:) = [timesteps(timeIndex), controlledStateLin.', FConLin, estimatedConStateLin.'];
     controlledResultNonLin(timeIndex,:) = [timesteps(timeIndex), controlledStateNonLin.', FConNonLin, estimatedConStateNonLin.'];
     
-    stateLin = simulateLinearSystem(stateLin, FLin + uF, step, params);
-    stateNonLin = simulateNonLinearSystem(stateNonLin, FNonLin + uF, step, params);
-    controlledStateLin = simulateLinearSystem(controlledStateLin, FConLin + uF, step, params);
-    controlledStateNonLin = simulateNonLinearSystem(controlledStateNonLin, FConNonLin + uF, step, params);
+    stateLin = simulateLinearSystem(stateLin, FLin + disturbanceForce, step, params);
+    stateNonLin = simulateNonLinearSystem(stateNonLin, FNonLin + disturbanceForce, step, params);
+    controlledStateLin = simulateLinearSystem(controlledStateLin, FConLin + disturbanceForce, step, params);
+    controlledStateNonLin = simulateNonLinearSystem(controlledStateNonLin, FConNonLin + disturbanceForce, step, params);
     
     if GRAPHICAL_PLOT && mod(timeIndex, SHOW_EVERY_N_FRAMES) == 0
         if PLOT_LINEAR

@@ -15,9 +15,7 @@ if ~exist('GRAPHICAL_PLOT','var')
 %     initState = [0;1;0;pi/16;0;-pi/16];
     initState = [0;0;0;0;0;0];
     
-%     L_Goal = [-20;-15;-10;-5;-3.5;-2]*0.1;
     L_Goal = [-20;-19;-10;-9;-5;-4]*0.15;
-%     L_Goal = linspace(-0.3,-0.15,6)*1;
 
     step = 0.0001; % Seconds
     timesteps = 0:step:50-step;
